@@ -1,14 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, withRouter } from "react-router-dom";
+import {
+  signInUser,
+  signInWithGoogle,
+  resetAllAuthForms,
+} from "../../redux/User/user.actions";
 import "./styles.scss";
 import Button from "../forms/Button";
-import { signInWithGoogle, auth } from "./../../firebase/utils";
 import AuthWrapper from "./../AuthWrapper";
 import FormInput from "../forms/FormInput";
 
+const mapState = ({ user }) => ({
+  signInSuccess: user.signInSuccess,
+});
+
 const SignIn = (props) => {
+  const { signInSuccess } = useSelector(mapState);
+  const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    if (signInSuccess) {
+      resetForm();
+      dispatch(resetAllAuthForms());
+      props.history.push("/");
+    }
+  }, [signInSuccess]);
 
   const resetForm = () => {
     setEmail("");
@@ -17,15 +36,11 @@ const SignIn = (props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    dispatch(signInUser({ email, password }));
+  };
 
-    try {
-      await auth.signInWithEmailAndPassword(email, password);
-      resetForm();
-      props.history.push("/");
-      //reset Form
-    } catch (err) {
-      console.log("den uparxei to pass");
-    }
+  const handleGoogleSignIn = () => {
+    dispatch(signInWithGoogle());
   };
 
   const configAuthWrapper = {
@@ -54,7 +69,7 @@ const SignIn = (props) => {
           <Button type="submit">Log In</Button>
           <div className="socialSignin">
             <div className="row">
-              <Button onClick={signInWithGoogle}>Sign In with Google</Button>
+              <Button onClick={handleGoogleSignIn}>Sign In with Google</Button>
             </div>
           </div>
           <div className="links">

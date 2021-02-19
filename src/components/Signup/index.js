@@ -1,17 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { signUpUser, resetAllAuthForms } from "../../redux/User/user.actions";
 import { withRouter } from "react-router-dom";
 import "./styles.scss";
 import FormInput from "../forms/FormInput";
 import Button from "../forms/Button";
 import AuthWrapper from "./../AuthWrapper";
-import { auth, handleUserProfile } from "../../firebase/utils";
 
 const Signup = (props) => {
+  const dispatch = useDispatch();
+  const { signUpSuccess, signUpError } = useSelector((state) => state.user);
+
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState([]);
+
+  useEffect(() => {
+    if (signUpSuccess) {
+      reset();
+      dispatch(resetAllAuthForms());
+      props.history.push("/");
+    }
+  }, [signUpSuccess]);
+
+  useEffect(() => {
+    if (Array.isArray(signUpError) && signUpError.length > 0) {
+      setErrors(signUpError);
+    }
+  }, [signUpError]);
 
   const reset = () => {
     setDisplayName("");
@@ -21,27 +39,16 @@ const Signup = (props) => {
     setErrors("");
   };
 
-  const handleFormSubmit = async (event) => {
+  const handleFormSubmit = (event) => {
     event.preventDefault();
-
-    if (password !== confirmPassword) {
-      const err = ["Password Do not Match"];
-      setErrors(err);
-      return;
-    }
-
-    try {
-      const { user } = await auth.createUserWithEmailAndPassword(
+    dispatch(
+      signUpUser({
+        displayName,
         email,
-        password
-      );
-
-      await handleUserProfile(user, { displayName });
-      reset();
-      props.history.push("/");
-    } catch (err) {
-      console.log(err);
-    }
+        password,
+        confirmPassword,
+      })
+    );
   };
 
   const configAuthWrapper = {
